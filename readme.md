@@ -1,358 +1,315 @@
-# AI Course Q&A System (RAG Pipeline)
+# AI Lecture Assistant - Retrieval Augmented Generation (RAG) System
 
 ## Overview
 
-This project is a **Retrieval-Augmented Generation (RAG)** based AI assistant that answers questions about lecture videos.
+AI Lecture Assistant is an end-to-end Retrieval-Augmented Generation (RAG) system that enables users to ask questions about lecture videos and receive context-aware answers grounded in the lecture content.
 
-Instead of relying solely on the language model's internal knowledge, the system retrieves relevant lecture content from video transcripts and uses that information to generate accurate, context-aware answers.
+The system processes lecture videos, converts speech into text, generates semantic embeddings for transcript chunks, retrieves the most relevant content using vector similarity search, and produces accurate answers using a locally hosted Large Language Model (LLM).
 
-The project demonstrates the complete workflow of a modern RAG system including:
-
-* Speech-to-Text Transcription
-* Text Chunking
-* Embedding Generation
-* Vector Similarity Search
-* Context Retrieval
-* LLM-based Answer Generation
+Unlike traditional chatbots that rely solely on model knowledge, this application retrieves relevant lecture information before generating responses, significantly reducing hallucinations and improving answer relevance.
 
 ---
 
-# Architecture
+## Key Features
+
+* Automatic lecture transcription using Whisper
+* Video preprocessing using FFmpeg
+* Semantic chunking and embedding generation
+* Vector-based retrieval using cosine similarity
+* Context-aware question answering
+* Local LLM inference using Ollama and Llama 3.2
+* Efficient embedding storage using Joblib
+* End-to-end offline execution with no API costs
+
+---
+
+## System Architecture
 
 ```text
-Lecture Videos
-      ↓
-Speech-to-Text (Whisper)
-      ↓
-Transcript
-      ↓
-Chunking
-      ↓
-Embeddings (bge-m3)
-      ↓
-Store Embeddings
-      ↓
+Lecture Video (.mp4)
+        │
+        ▼
+FFmpeg (Audio Extraction)
+        │
+        ▼
+Whisper Transcription
+        │
+        ▼
+Transcript Generation
+        │
+        ▼
+Text Chunking
+        │
+        ▼
+Embedding Generation (bge-m3)
+        │
+        ▼
+Embedding Storage (Joblib)
 
 User Question
-      ↓
+        │
+        ▼
 Question Embedding
-      ↓
+        │
+        ▼
 Cosine Similarity Search
-      ↓
-Top Relevant Chunks
-      ↓
+        │
+        ▼
+Top-K Relevant Chunks
+        │
+        ▼
+Prompt Construction
+        │
+        ▼
 Llama 3.2 (Ollama)
-      ↓
-Final Answer
+        │
+        ▼
+Generated Answer
 ```
 
 ---
 
-# Technologies Used
+## Technology Stack
 
-| Component         | Technology         |
-| ----------------- | ------------------ |
-| Speech-to-Text    | Whisper            |
-| Embedding Model   | bge-m3             |
-| Vector Search     | Cosine Similarity  |
-| LLM               | Llama 3.2 (Ollama) |
-| Storage           | Joblib             |
-| Language          | Python             |
-| Data Processing   | Pandas, NumPy      |
-| Similarity Search | Scikit-Learn       |
-| API Requests      | Requests           |
+| Category             | Technology    |
+| -------------------- | ------------- |
+| Programming Language | Python        |
+| Video Processing     | FFmpeg        |
+| Speech-to-Text       | Whisper       |
+| Embedding Model      | bge-m3        |
+| Data Processing      | Pandas, NumPy |
+| Similarity Search    | Scikit-Learn  |
+| Vector Storage       | Joblib        |
+| LLM                  | Llama 3.2     |
+| Model Serving        | Ollama        |
+| API Communication    | Requests      |
 
 ---
 
-# Project Workflow
+## Project Workflow
 
-## Step 1: Lecture Transcription
+### 1. Video Processing
 
-Lecture videos are converted into text transcripts using Whisper.
+Lecture videos are first converted from MP4 format to MP3 using FFmpeg.
 
-### Input
+```bash
+ffmpeg -i lecture.mp4 lecture.mp3
+```
+
+This step extracts high-quality audio for transcription.
+
+---
+
+### 2. Speech-to-Text Transcription
+
+Audio files are transcribed using Whisper.
+
+Example Output:
 
 ```text
-lecture.mp4
+Today we will discuss data augmentation techniques.
+Data augmentation helps improve model generalization.
 ```
 
-### Output
-
-```text
-Today we will discuss data augmentation.
-Data augmentation increases dataset diversity.
-```
-
-### Purpose
-
-* Convert audio into searchable text.
-* Create a knowledge base for retrieval.
+The generated transcript serves as the knowledge source for the RAG pipeline.
 
 ---
 
-## Step 2: Text Chunking
+### 3. Transcript Chunking
 
-Large transcripts are divided into smaller chunks.
+Long transcripts are divided into smaller chunks.
 
-### Example
+Example:
 
 ```text
 Chunk 1:
-Introduction to CNNs
+Introduction to Neural Networks
 
 Chunk 2:
-Data Augmentation Techniques
+Convolutional Neural Networks
 
 Chunk 3:
-Transfer Learning
+Data Augmentation Techniques
 ```
 
-### Why Chunking?
+Benefits:
 
-* Improves retrieval accuracy.
-* Produces better embeddings.
-* Reduces context size for the LLM.
+* Better retrieval precision
+* Improved embedding quality
+* Reduced context length for the LLM
 
 ---
 
-## Step 3: Embedding Generation
+### 4. Embedding Generation
 
-Each chunk is converted into a numerical vector using the **bge-m3** embedding model.
+Each chunk is transformed into a dense vector representation using the bge-m3 embedding model.
 
-### Example
-
-Question:
-
-```text
-What is NLP?
-```
-
-Embedding:
+Example:
 
 ```python
 [0.12, -0.45, 0.91, ...]
 ```
 
-### Purpose
-
-Embeddings capture the semantic meaning of text, allowing the system to compare concepts rather than exact words.
+Embeddings capture semantic meaning rather than relying on exact keyword matches.
 
 ---
 
-## Step 4: Embedding Storage
+### 5. Embedding Storage
 
-Generated embeddings are stored locally using Joblib.
+Generated embeddings and metadata are stored locally using Joblib.
 
-### Stored Information
+Stored Information:
 
+* Video Number
 * Video Title
-* Chunk Number
-* Timestamps
+* Chunk ID
 * Transcript Text
+* Start Timestamp
+* End Timestamp
 * Embedding Vector
 
-### File
+Example File:
 
 ```text
 embeddings.joblib
 ```
 
-### Purpose
-
-Avoids recomputing embeddings every time the system starts.
+This avoids recomputing embeddings during every application startup.
 
 ---
 
-## Step 5: User Query Processing
+### 6. User Query Processing
 
-The user submits a question.
-
-### Example
+When a user submits a question:
 
 ```text
 What is Data Augmentation?
 ```
 
-The same embedding model (**bge-m3**) converts the question into a vector representation.
+The same embedding model converts the question into a vector representation.
 
 ---
 
-## Step 6: Similarity Search
+### 7. Semantic Retrieval
 
-The question embedding is compared against all stored chunk embeddings using cosine similarity.
+The query embedding is compared against all stored chunk embeddings using cosine similarity.
 
-### Formula
+Cosine Similarity Formula:
 
-```text
 cos(θ) = (A · B) / (||A|| ||B||)
-```
 
 Where:
 
-* A = Question embedding
-* B = Chunk embedding
+* A = Question Embedding
+* B = Chunk Embedding
 
-### Similarity Range
-
-| Value | Meaning   |
-| ----- | --------- |
-| 1     | Identical |
-| 0     | Unrelated |
-| -1    | Opposite  |
+The highest scoring chunks are selected as relevant context.
 
 ---
 
-## Step 7: Retrieval
+### 8. Context Construction
 
-Top-K most relevant chunks are selected.
+Retrieved chunks are combined into a structured prompt.
 
-### Example Retrieved Chunks
+Example:
 
 ```text
-Chunk 12:
-Data augmentation helps increase training data diversity.
-
-Chunk 13:
+Retrieved Context:
+Data augmentation increases dataset diversity.
 Common techniques include rotation and flipping.
-```
-
-These chunks become the context for answer generation.
-
----
-
-## Step 8: Prompt Construction
-
-A structured prompt is built using:
-
-* Retrieved Chunks
-* User Question
-* Instructions
-
-### Example
-
-```text
-Retrieved Chunks:
-...
 
 Question:
 What is Data Augmentation?
-
-Answer only using the retrieved chunks.
 ```
 
 ---
 
-## Step 9: Answer Generation
+### 9. Answer Generation
 
-The prompt is sent to a locally hosted Llama 3.2 model using Ollama.
+The prompt is sent to Llama 3.2 through Ollama.
 
-### Endpoint
+API Endpoint:
 
 ```text
 http://localhost:11434/api/generate
 ```
 
-### Purpose
-
-The LLM:
-
-* Reads retrieved lecture content.
-* Understands the question.
-* Generates a natural language answer grounded in the retrieved context.
+The model generates answers strictly grounded in the retrieved lecture content.
 
 ---
 
-# Key Concepts Learned
+## Example Query
 
-## Retrieval-Augmented Generation (RAG)
-
-RAG combines:
+### User Question
 
 ```text
-Retrieval
-+
-Generation
+What is Data Augmentation?
 ```
 
-### Benefits
-
-* Reduces hallucinations
-* Uses domain-specific knowledge
-* Works with private data
-* Improves answer reliability
-
----
-
-## Embeddings
-
-Embeddings are vector representations of text.
-
-Example:
+### Retrieved Context
 
 ```text
-NLP
-Natural Language Processing
+Data augmentation increases training data diversity.
+
+Common techniques include image rotation,
+flipping and cropping.
 ```
 
-Both phrases generate nearby vectors because they have similar meanings.
+### Generated Answer
+
+```text
+Data augmentation is a technique used to increase
+the diversity of training data by applying
+transformations such as rotation, flipping,
+and cropping to existing samples.
+```
 
 ---
 
-## Cosine Similarity
+## Challenges Addressed
 
-Measures semantic similarity between vectors.
-
-Used to identify the most relevant transcript chunks for a given question.
-
----
-
-## Local LLM Deployment
-
-Implemented using Ollama and Llama 3.2.
-
-### Advantages
-
-* No API costs
-* Offline execution
-* Faster experimentation
-* Full model control
+* Handling transcription inaccuracies
+* Determining optimal chunk sizes
+* Improving retrieval relevance
+* Prompt engineering for grounded responses
+* Efficient storage and loading of embeddings
+* Integrating local LLM inference pipelines
 
 ---
 
-# Challenges Faced
+## Future Enhancements
 
-* Handling transcription errors from Whisper
-* Selecting optimal chunk sizes
-* Improving retrieval accuracy
-* Designing effective prompts
-* Managing embedding storage efficiently
-* Integrating local LLM inference
-
----
-
-# Future Improvements
-
-* Use a dedicated vector database (FAISS, ChromaDB, Pinecone)
-* Hybrid Search (Keyword + Semantic Search)
-* Metadata Filtering
-* Conversation Memory
-* Streaming Responses
-* Web Interface using Streamlit or React
-* Multi-document Retrieval
-* Re-ranking Models
+* FAISS-based vector indexing
+* ChromaDB integration
+* Hybrid Search (BM25 + Embeddings)
+* Re-ranking models
+* Multi-document retrieval
+* Conversation memory
+* Streaming responses
+* Web interface using Streamlit or React
+* Retrieval evaluation framework
 
 ---
 
-# Skills Demonstrated
+## Skills Demonstrated
 
 * Retrieval-Augmented Generation (RAG)
 * Natural Language Processing (NLP)
+* Semantic Search
+* Vector Databases Concepts
 * Embedding Models
-* Vector Search
+* Information Retrieval
 * Prompt Engineering
 * Local LLM Deployment
-* Python Development
 * API Integration
-* Information Retrieval Systems
+* Data Processing Pipelines
+* Machine Learning Systems
+* Python Development
 
 ---
+
+## Learning Outcomes
+
+This project provided practical experience in building modern AI systems by combining information retrieval techniques with large language models. It demonstrates how retrieval can be used to improve answer quality, reduce hallucinations, and enable question-answering over private datasets.
+
+The architecture closely mirrors production-grade RAG pipelines used in enterprise AI assistants, document search systems, and knowledge management platforms.
