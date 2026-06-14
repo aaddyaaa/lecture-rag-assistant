@@ -1,0 +1,16 @@
+
+I am teaching an Artificial Intelligence course.
+
+Here are the retrieved video chunks:
+
+[{"title":"first video","number":"1","text":" data manually, right. And this process of structuring unstructured data is basically called","start":537.28,"end":544.64},{"title":"first video","number":"1","text":" of the ability to automatically handle unstructured data? What is like the no-brainer application?","start":777.44,"end":783.28},{"title":"fourth video","number":"4","text":" So neural networks are really good for unstructured data.","start":3287.48,"end":3290.48},{"title":"second video","number":"2","text":" Okay? This is an example of course of what's called structured data because it's all data sitting in the columns of a spreadsheet.","start":217.0,"end":223.0},{"title":"second video","number":"2","text":" Right? So, working with structured data is the way we warm up our knowledge of neural networks. And then we will do things like working with unstructured data starting next week with images and then later on with text and so on and so forth.","start":223.0,"end":235.0}]
+
+The user asked:
+
+where is structured and unstructured data taught?
+
+Instructions:
+1. Answer ONLY using the information present in the retrieved chunks.
+2. Mention the video title and timestamp whenever possible.
+3. If the answer is not present in the chunks, say:
+   "I could not find the answer in the course content."

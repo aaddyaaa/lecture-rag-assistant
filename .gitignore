@@ -1,0 +1,35 @@
+# Generated transcript files
+jsons/
+
+# Old experiments
+unused/
+
+# Generated outputs
+response.txt
+
+# Embeddings
+*.joblib
+
+# Audio files
+*.mp3
+*.wav
+
+# Video files
+*.mp4
+*.mkv
+*.avi
+
+# Python cache
+__pycache__/
+*.pyc
+
+# VS Code temporary files
+tempCodeRunnerFile.py
+
+# Virtual environments
+venv/
+.env
+
+# OS files
+.DS_Store
+Thumbs.db
